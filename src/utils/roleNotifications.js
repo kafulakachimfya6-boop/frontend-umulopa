@@ -80,12 +80,20 @@ export function getRoleMessages({ user, donors = [], auditLogs = [], bloodReques
   const donorProfile = donors.find((d) => d.id === user?.donorId || d.email?.toLowerCase() === user?.email?.toLowerCase());
   const donorBloodType = donorProfile?.bloodType || user?.bloodType;
 
+  // An audit log is "targeted" at the current user if it carries an explicit
+  // hospitalId/donorId that matches them, regardless of whether it also has a
+  // `role` field. Only fall back to role-matching for logs that don't carry
+  // an entity id at all (e.g. platform-wide admin events). Requiring
+  // `log.role` up front was rejecting perfectly-targeted logs that only ever
+  // set `hospitalId`/`donorId`.
   const targeted = auditLogs.filter((log) => {
-    if (!log?.role) return false;
-    if (normaliseRole(log.role) !== role) return false;
-    if (role === ROLES.HOSPITAL_STAFF && log?.hospitalId != null && String(log.hospitalId) !== String(user?.hospitalId)) return false;
-    if (role === ROLES.DONOR && log?.donorId != null && String(log.donorId) !== String(user?.donorId)) return false;
-    return true;
+    if (role === ROLES.HOSPITAL_STAFF && log?.hospitalId != null) {
+      return String(log.hospitalId) === String(user?.hospitalId);
+    }
+    if (role === ROLES.DONOR && log?.donorId != null) {
+      return String(log.donorId) === String(user?.donorId);
+    }
+    return !!log?.role && normaliseRole(log.role) === role;
   });
   targeted.slice(0, 4).forEach((log) => messages.push(`${log.event}: ${log.detail || log.time}`));
 

@@ -121,9 +121,22 @@ export function AppStateProvider({ children }) {
     const tx = [];
     const nextLots = inventoryLots.map((lot) => {
       if (!expired.some((x) => x.id === lot.id)) return lot;
-      const qty = Number(lot.remaining) || 0;
-      const result = applyInventoryChange(rows, { facilityId: lot.facilityId, facilityName: lot.facilityName, facilityType: lot.facilityId === ZNBTS_FACILITY_ID ? "ZNBTS" : "Hospital", province: "Copperbelt", bloodGroup: lot.bloodGroup, quantity: qty, deltaAvailable: -qty, deltaExpired: qty, transactionType: "EXPIRED", referenceId: lot.id, performedBy: "System expiry reconciliation" });
-      rows = result.rows; tx.push(result.transaction);
+      // Only deduct as much as the network inventory actually has on hand for
+      // this facility/blood-group pair. The hardcoded demo lots and the
+      // network-level seed data are two independent sources of truth and can
+      // disagree (e.g. a lot exists for a group the network seed never
+      // stocked at that facility), so we must never trust `lot.remaining`
+      // blindly here — doing so is what caused "Inventory cannot become
+      // negative" to throw during app startup.
+      const key = `${lot.facilityId}::${lot.bloodGroup}`;
+      const row = rows.find((r) => `${r.facilityId}::${r.bloodGroup}` === key);
+      const currentAvailable = row ? Number(row.available) || 0 : 0;
+      const qty = Math.min(Number(lot.remaining) || 0, currentAvailable);
+
+      if (qty > 0) {
+        const result = applyInventoryChange(rows, { facilityId: lot.facilityId, facilityName: lot.facilityName, facilityType: lot.facilityId === ZNBTS_FACILITY_ID ? "ZNBTS" : "Hospital", province: "Copperbelt", bloodGroup: lot.bloodGroup, quantity: qty, deltaAvailable: -qty, deltaExpired: qty, transactionType: "EXPIRED", referenceId: lot.id, performedBy: "System expiry reconciliation" });
+        rows = result.rows; tx.push(result.transaction);
+      }
       return { ...lot, remaining: 0, status: "Expired" };
     });
     setNetworkInventory(rows);
