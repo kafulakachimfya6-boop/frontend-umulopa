@@ -1,0 +1,2 @@
+import { FaSearch } from "react-icons/fa";
+export default function SearchBar({ value, onChange, placeholder = "Search", className = "" }) { return <label className={`flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-slate-400 focus-within:border-[#7A0E14] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#7A0E14]/10 ${className}`}><FaSearch /><input value={value} onChange={onChange} placeholder={placeholder} className="w-full bg-transparent py-2.5 text-sm text-slate-700 outline-none" /></label>; }

@@ -1,0 +1,1 @@
+export default function LoadingSkeleton({ lines = 3, className = "" }) { return <div className={`animate-pulse space-y-3 ${className}`}>{Array.from({ length: lines }, (_, index) => <div key={index} className={`h-4 rounded bg-slate-200 ${index === 0 ? "w-3/4" : "w-full"}`} />)}</div>; }

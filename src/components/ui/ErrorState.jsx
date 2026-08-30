@@ -1,0 +1,2 @@
+import { FaTriangleExclamation } from "react-icons/fa6";
+export default function ErrorState({ title = "Unable to load this content", description = "Please try again.", action }) { return <div className="grid place-items-center rounded-2xl border border-red-100 bg-red-50 px-6 py-12 text-center"><FaTriangleExclamation className="text-3xl text-red-400" /><h3 className="mt-3 font-bold text-red-900">{title}</h3><p className="mt-1 max-w-sm text-sm text-red-700">{description}</p>{action && <div className="mt-4">{action}</div>}</div>; }

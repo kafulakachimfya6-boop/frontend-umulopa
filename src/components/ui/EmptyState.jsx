@@ -1,0 +1,2 @@
+import { FaInbox } from "react-icons/fa";
+export default function EmptyState({ title = "Nothing here yet", description = "There are no records to display.", action }) { return <div className="grid place-items-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center"><FaInbox className="text-3xl text-slate-300" /><h3 className="mt-3 font-bold text-slate-800">{title}</h3><p className="mt-1 max-w-sm text-sm text-slate-500">{description}</p>{action && <div className="mt-4">{action}</div>}</div>; }
