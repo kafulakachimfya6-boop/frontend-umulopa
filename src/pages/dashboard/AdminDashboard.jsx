@@ -1,5 +1,5 @@
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { FaArrowRight, FaBell, FaCheckCircle, FaDatabase, FaFileAlt, FaHospital, FaKey, FaPlus, FaServer, FaShieldAlt, FaUserPlus, FaUsers } from "react-icons/fa";
+import { FaArrowRight, FaBell,FaTint, FaCheckCircle, FaDatabase, FaFileAlt, FaHospital, FaKey, FaPlus, FaServer, FaShieldAlt, FaUserPlus, FaUsers } from "react-icons/fa";
 import StatusBadge from "../../components/StatusBadge";
 
 const cards = [
