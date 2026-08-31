@@ -80,3 +80,40 @@ button, input, select, textarea {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* UMULOPA Safe Transfer responsive operational UI */
+* { box-sizing: border-box; }
+html { min-width: 320px; scroll-padding-top: 5rem; }
+body { min-width: 320px; overflow-x: hidden; }
+#root { min-height: 100vh; min-width: 320px; }
+.app-main, .app-content, main { min-width: 0; }
+.app-content { overscroll-behavior-x: none; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button, [role="button"] { min-height: 44px; }
+.app-sidebar nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.25) transparent; }
+.app-sidebar nav::-webkit-scrollbar { width: 7px; }
+.app-sidebar nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.25); border-radius: 999px; }
+.table-scroll, .overflow-x-auto { -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+.table-scroll table, .overflow-x-auto table { min-width: 680px; }
+.form-grid { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 767px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .app-content { padding-left: .75rem; padding-right: .75rem; }
+  .app-content h1 { font-size: clamp(1.5rem, 7vw, 2rem); line-height: 1.15; }
+  .app-content h2 { font-size: clamp(1.125rem, 5vw, 1.5rem); }
+  .app-content .rounded-3xl { border-radius: 1.25rem; }
+  .app-content .p-8 { padding: 1.25rem; }
+  .app-content .p-6 { padding: 1rem; }
+  .app-content .px-8 { padding-left: 1rem; padding-right: 1rem; }
+  .app-content .gap-6 { gap: 1rem; }
+  .app-content .gap-5 { gap: .875rem; }
+  .app-content table { font-size: .8125rem; }
+  .app-content th, .app-content td { white-space: nowrap; }
+}
+@media (min-width: 768px) {
+  .mobile-only { display: none !important; }
+}
+@media (max-width: 767px) {
+  .desktop-only { display: none !important; }
+}

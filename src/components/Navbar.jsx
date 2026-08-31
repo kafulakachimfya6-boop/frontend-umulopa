@@ -1,15 +1,16 @@
 import { useMemo, useState } from "react";
-import { FaEnvelope, FaBars, FaSearch } from "react-icons/fa";
+import { FaEnvelope, FaBars } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useAppState } from "../context/useAppState";
 import { clearAuthentication } from "../utils/authStorage";
-import { normaliseRole, roleLabels } from "../utils/roles";
+import { normaliseRole, roleLabels, getDashboardPath } from "../utils/roles";
 import NotificationDropdown from "./ui/NotificationDropdown";
+import { getRoleMessages, getRoleNotifications } from "../utils/roleNotifications";
 import UserMenu from "./ui/UserMenu";
 
 function Navbar({ onMobileMenuToggle }) {
   const navigate = useNavigate();
-  const { user, logout } = useAppState();
+  const { user, logout, bloodRequests = [], auditLogs = [], inventoryLots = [], hospitals = [], donors = [], donorAppointments = [], donorDonations = [], donorEmergencyRequests = [] } = useAppState();
   const [showPanel, setShowPanel] = useState(null);
 
   const profileName = useMemo(() => {
@@ -23,6 +24,28 @@ function Navbar({ onMobileMenuToggle }) {
 
   const initials = useMemo(() => profileName.slice(0, 2).toUpperCase(), [profileName]);
 
+  const liveNotifications = useMemo(() => getRoleNotifications({
+    user,
+    bloodRequests,
+    donors,
+    inventoryLots,
+    hospitals,
+    donorAppointments,
+    donorDonations,
+    donorEmergencyRequests,
+  }), [user, bloodRequests, donors, inventoryLots, hospitals, donorAppointments, donorDonations, donorEmergencyRequests]);
+
+  const liveMessages = useMemo(() => getRoleMessages({
+    user,
+    auditLogs,
+    donors,
+    bloodRequests,
+    hospitals,
+    donorAppointments,
+    donorDonations,
+    donorEmergencyRequests,
+  }), [user, auditLogs, donors, bloodRequests, hospitals, donorAppointments, donorDonations, donorEmergencyRequests]);
+
   const handleLogout = () => {
     logout();
     clearAuthentication();
@@ -30,62 +53,49 @@ function Navbar({ onMobileMenuToggle }) {
   };
 
   const renderPanel = () => {
-    if (showPanel === "notifications") {
-      return (
-        <div className="absolute right-0 top-12 w-[min(20rem,calc(100vw-2rem))] rounded-3xl border border-gray-200 bg-white p-4 shadow-xl">
-          <div className="flex items-center justify-between">
-            <p className="font-semibold text-gray-900">Notifications</p>
-            <button type="button" onClick={() => setShowPanel(null)} className="text-sm text-[#7A0916]">Close</button>
-          </div>
-          <div className="mt-4 space-y-3">
-            <div className="rounded-2xl bg-[#FFF5F5] p-3 text-sm text-gray-700">Urgent blood request pending for Ndola Teaching Hospital.</div>
-            <div className="rounded-2xl bg-gray-50 p-3 text-sm text-gray-700">Your donor profile is active and visible to partner hospitals.</div>
-          </div>
-        </div>
-      );
-    }
-
     if (showPanel === "messages") {
       return (
-        <div className="absolute right-0 top-12 w-[min(20rem,calc(100vw-2rem))] rounded-3xl border border-gray-200 bg-white p-4 shadow-xl">
-          <div className="flex items-center justify-between">
-            <p className="font-semibold text-gray-900">Messages</p>
-            <button type="button" onClick={() => setShowPanel(null)} className="text-sm text-[#7A0916]">Close</button>
+        <div className="absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] rounded-3xl border border-gray-200 bg-white p-4 shadow-xl">
+          <div className="flex items-center justify-between border-b pb-2">
+            <p className="font-semibold text-gray-900">Live System Events</p>
+            <button type="button" onClick={() => setShowPanel(null)} className="text-sm font-semibold text-[#7A0916]">Close</button>
           </div>
-          <div className="mt-4 space-y-3">
-            <div className="rounded-2xl bg-[#FFF5F5] p-3 text-sm text-gray-700">Staff update: Donor availability updated for O-.</div>
-            <div className="rounded-2xl bg-gray-50 p-3 text-sm text-gray-700">Admin notice: Daily inventory report is ready.</div>
+          <div className="mt-3 space-y-2 max-h-64 overflow-y-auto">
+            {liveMessages.length > 0 ? (
+              liveMessages.map((msg, i) => (
+                <div key={i} className="rounded-2xl bg-slate-50 p-3 text-xs text-gray-700 border border-slate-100">
+                  {msg}
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-gray-500">No recent system activity recorded.</p>
+            )}
           </div>
         </div>
       );
     }
-
     return null;
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-30 border-b border-gray-200 bg-white px-3 py-2.5 shadow-sm sm:px-4 sm:py-3">
+      <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <button type="button" onClick={onMobileMenuToggle} className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-200 bg-white text-[#6B0F1A] md:hidden">
             <FaBars />
           </button>
-          <div className="rounded-full bg-[#F3E9E9] px-3 py-2 text-sm font-semibold text-[#6B0F1A]">
+          <div className="max-w-[42vw] truncate rounded-full bg-[#F3E9E9] px-2.5 py-2 text-xs font-semibold text-[#6B0F1A] sm:max-w-none sm:px-3 sm:text-sm">
             {roleLabel}
           </div>
           <nav className="hidden sm:flex sm:flex-wrap sm:items-center sm:gap-2 text-sm text-gray-500">
-            <span>Home</span>
+            <button type="button" onClick={() => navigate(getDashboardPath(normaliseRole(user?.role)))} className="font-medium hover:text-[#7A0E14]">Home</button>
             <span className="text-gray-300">/</span>
             <span>{roleLabel}</span>
           </nav>
         </div>
 
-        <div className="flex items-center gap-3">
-          <label className="hidden w-full items-center gap-2 rounded-[28px] border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-500 sm:flex sm:w-72">
-            <FaSearch />
-            <input type="search" placeholder="Search dashboard" className="w-full bg-transparent outline-none" />
-          </label>
-          <NotificationDropdown open={showPanel === "notifications"} onToggle={() => setShowPanel(showPanel === "notifications" ? null : "notifications")} notifications={["Urgent blood request pending for Ndola Teaching Hospital.", "Your donor profile is active and visible to partner hospitals."]} />
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+          <NotificationDropdown open={showPanel === "notifications"} onToggle={() => setShowPanel(showPanel === "notifications" ? null : "notifications")} notifications={liveNotifications} />
           <div className="relative">
             <button type="button" onClick={() => setShowPanel(showPanel === "messages" ? null : "messages")} className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-gray-200 bg-white text-[#6B0F1A] shadow-sm transition hover:bg-gray-50">
               <FaEnvelope />

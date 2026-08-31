@@ -34,7 +34,7 @@ const services = [
   },
   {
     title: "Blood Inventory",
-    description: "Monitor stock levels, expiry dates, and low-stock alerts in real time for Ndola hospitals.",
+    description: "Monitor stock levels, expiry dates, and low-stock alerts in real time for Copperbelt hospitals.",
     icon: Building2,
     gradient: "from-[#E63946] to-[#C1121F]",
   },

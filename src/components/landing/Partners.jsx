@@ -1,14 +1,15 @@
 import Section, { SectionHeader } from "./Section";
 
 const partners = [
-  "Lusaka University Teaching Hospital",
   "Ndola Teaching Hospital",
-  "Kitwe Regional Blood Center",
-  "Levy Mwanawasa General Hospital",
-  "Kabwe General Hospital",
-  "Livingstone General Hospital",
-  "Chipata General Hospital",
-  "Mongu Regional Hospital",
+  "Kitwe Teaching Hospital",
+  "Mufulira District Hospital",
+  "Chingola District Hospital",
+  "Luanshya District Hospital",
+  "Masaiti District Hospital",
+  "Mpongwe District Hospital",
+  "Lufwanyama District Hospital",
+  "Chililabombwe District Hospital",
 ];
 
 export default function Partners() {
@@ -18,7 +19,7 @@ export default function Partners() {
         id="partners-heading"
         eyebrow="Our network"
         title="Partner Hospitals"
-        subtitle="Trusted by leading healthcare institutions across Zambia and the region."
+        subtitle="Built for the Zambia National Blood Transfusion Service (ZNBTS) Copperbelt Province hospital network."
       />
 
       <div className="relative overflow-hidden">

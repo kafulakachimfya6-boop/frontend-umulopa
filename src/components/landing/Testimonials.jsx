@@ -5,7 +5,7 @@ const testimonials = [
   {
     name: "Mary Chanda",
     role: "Patient",
-    quote: "When I needed an emergency transfusion, UMULOPA connected me to available blood within hours. It truly saved my life.",
+    quote: "When I needed an emergency transfusion, ZNBTS connected me to available blood within hours. It truly saved my life.",
     initials: "MC",
   },
   {
@@ -29,7 +29,7 @@ export default function Testimonials() {
         id="testimonials-heading"
         eyebrow="Stories"
         title="What People Say"
-        subtitle="Real experiences from patients, clinicians, and donors using UMULOPA Safe Transfer."
+        subtitle="Real experiences from patients, clinicians, and donors using ZNBTS."
       />
 
       <div className="grid gap-8 md:grid-cols-3">

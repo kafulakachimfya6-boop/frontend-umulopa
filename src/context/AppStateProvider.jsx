@@ -1,69 +1,152 @@
 import { useEffect, useMemo, useState } from "react";
 import { AppStateContext } from "./AppStateContext";
 import {
-  patients as initialPatients,
-  donors as initialDonors,
-  bloodRequests as initialBloodRequests,
-  historyData as initialHistoryData,
-  transfusions as initialTransfusions,
-  weeklyActivity as initialWeeklyActivity,
-  weeklyReportRows as initialWeeklyReportRows,
-  usageMetrics as initialUsageMetrics,
-  usageRows as initialUsageRows,
-  initialStock,
-} from "../data/sampleData";
+  DEMO_SEED_VERSION, demoAdminUsers, demoAppointments, demoAuditLogs, demoBloodRequests, demoDonations, demoDonorAccounts, demoDonorEmergencyRequests, demoDonors, demoHospitals, demoHistory, demoNotifications, demoPatients, demoStaffAccounts, demoStock, demoTransfers, demoTransfusions, demoHospitalAccounts,
+} from "../data/demoSeedData";
 import { clearAuthentication } from "../utils/authStorage";
+import { uniqueRecords } from "../utils/analytics";
+import { seedNetworkInventory, applyInventoryChange, ZNBTS_FACILITY_ID } from "../utils/networkInventory";
 
+
+function prepareDemoStorage() {
+  try {
+    const current = localStorage.getItem("znbts_demoSeedVersion");
+    if (current !== DEMO_SEED_VERSION) {
+      const prefixes = ["znbts_", "umulopa_"];
+      const authKeys = new Set(["znbts_user", "umulopa_user", "isAuthenticated", "userEmail"]);
+      Object.keys(localStorage).filter((key) => prefixes.some((prefix) => key.startsWith(prefix)) && !authKeys.has(key)).forEach((key) => localStorage.removeItem(key));
+      localStorage.setItem("znbts_demoSeedVersion", DEMO_SEED_VERSION);
+    }
+  } catch { /* storage is optional */ }
+}
 
 function useStoredState(key, initialValue) {
   const [value, setValue] = useState(() => {
     try {
-      const stored = localStorage.getItem(`umulopa_${key}`);
-      return stored ? JSON.parse(stored) : initialValue;
+      const stored = localStorage.getItem(`znbts_${key}`) || localStorage.getItem(`umulopa_${key}`);
+      return stored ? uniqueRecords(JSON.parse(stored)) : uniqueRecords(initialValue);
     } catch {
-      return initialValue;
+      return uniqueRecords(initialValue);
     }
   });
+
   useEffect(() => {
-    try { localStorage.setItem(`umulopa_${key}`, JSON.stringify(value)); } catch { /* storage is optional */ }
+    try { localStorage.setItem(`znbts_${key}`, JSON.stringify(value)); } catch { /* storage is optional */ }
   }, [key, value]);
+
+  useEffect(() => {
+    let channel;
+    const onStorage = (event) => {
+      if (event.key !== `znbts_${key}` && event.key !== `umulopa_${key}`) return;
+      if (!event.newValue) return;
+      try { setValue(uniqueRecords(JSON.parse(event.newValue))); } catch { /* ignore malformed state */ }
+    };
+    window.addEventListener("storage", onStorage);
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        channel = new BroadcastChannel(`znbts:${key}`);
+        channel.onmessage = (event) => {
+          if (event.data?.key === key) setValue(uniqueRecords(event.data.value));
+        };
+      }
+    } catch { /* optional */ }
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      channel?.close();
+    };
+  }, [key]);
+
   return [value, setValue];
 }
 
 export function AppStateProvider({ children }) {
-  const [patients, setPatients] = useStoredState("patients", initialPatients);
-  const [bloodRequests, setBloodRequests] = useStoredState("bloodRequests", initialBloodRequests);
-  const [history, setHistory] = useStoredState("history", initialHistoryData);
-  const [transfusions, setTransfusions] = useStoredState("transfusions", initialTransfusions);
-  const [donors, setDonors] = useStoredState("donors", initialDonors);
-  const [weeklyActivity, setWeeklyActivity] = useStoredState("weeklyActivity", initialWeeklyActivity);
-  const [weeklyReportRows, setWeeklyReportRows] = useStoredState("weeklyReportRows", initialWeeklyReportRows);
-  const [usageMetrics, setUsageMetrics] = useStoredState("usageMetrics", initialUsageMetrics);
-  const [usageRows, setUsageRows] = useStoredState("usageRows", initialUsageRows);
-  const [stock, setStock] = useStoredState("stock", initialStock);
-  const [adminUsers, setAdminUsers] = useStoredState("adminUsers", [
-    { id: 1, name: "Dr. Chola Banda", email: "chola@ndola.org", role: "staff", hospital: "Ndola Teaching Hospital", status: "Active" },
-    { id: 2, name: "Mwansa Tembo", email: "mwansa@centre.zm", role: "regional", hospital: "Copperbelt Blood Centre", status: "Active" },
-    { id: 3, name: "Ruth Phiri", email: "ruth.phiri@mail.com", role: "donor", hospital: "—", status: "Pending" },
+  prepareDemoStorage();
+  const [patients, setPatients] = useStoredState("patients", demoPatients);
+  const [bloodRequests, setBloodRequests] = useStoredState("bloodRequests", demoBloodRequests);
+  const [history, setHistory] = useStoredState("history", demoHistory);
+  const [transfusions, setTransfusions] = useStoredState("transfusions", demoTransfusions);
+  const [donors, setDonors] = useStoredState("donors", demoDonors);
+  const [stock, setStock] = useStoredState("stock", demoStock);
+  const [adminUsers, setAdminUsers] = useStoredState("adminUsers", demoAdminUsers);
+  useEffect(() => {
+    const seedAdmin = demoAdminUsers[0];
+    setAdminUsers((current) => current.some((account) => account.email?.toLowerCase() === seedAdmin.email) ? current : [...current, seedAdmin]);
+  }, [setAdminUsers]);
+  const [hospitals, setHospitals] = useStoredState("hospitals", demoHospitals);
+  const [transfers, setTransfers] = useStoredState("transfers", demoTransfers);
+  const [networkInventory, setNetworkInventory] = useStoredState("networkInventory", seedNetworkInventory(hospitals));
+  useEffect(() => {
+    setNetworkInventory((current) => {
+      const seeded = seedNetworkInventory(hospitals);
+      const byKey = new Map(current.map((row) => [`${row.facilityId}::${row.bloodGroup}`, row]));
+      return seeded.map((row) => byKey.get(`${row.facilityId}::${row.bloodGroup}`) || row);
+    });
+  }, [hospitals.length, setNetworkInventory]);
+  const [inventoryLots, setInventoryLots] = useStoredState("inventoryLots", [
+    { id: "LOT-001", facilityId: "ZNBTS-CB-KITWE-KTH", facilityName: "ZNBTS Kitwe Blood Centre (under Kitwe Teaching Hospital)", bloodGroup: "O+", quantity: 6, remaining: 6, collectionDate: "2026-08-20", expiryDate: "2026-09-03", status: "Available" },
+    { id: "LOT-002", facilityId: "ZNBTS-CB-KITWE-KTH", facilityName: "ZNBTS Kitwe Blood Centre (under Kitwe Teaching Hospital)", bloodGroup: "A+", quantity: 4, remaining: 4, collectionDate: "2026-08-01", expiryDate: "2026-08-26", status: "Available" },
+    { id: "LOT-003", facilityId: "HOSP-1", facilityName: "Ndola Teaching Hospital", bloodGroup: "O-", quantity: 2, remaining: 2, collectionDate: "2026-08-22", expiryDate: "2026-09-05", status: "Available" },
+    { id: "LOT-H1-A", facilityId: "HOSP-1", facilityName: "Ndola Teaching Hospital", bloodGroup: "A+", quantity: 6, remaining: 6, collectionDate: "2026-08-23", expiryDate: "2026-09-06", status: "Testing" },
+    { id: "LOT-H2-B", facilityId: "HOSP-2", facilityName: "Kitwe Teaching Hospital", bloodGroup: "B+", quantity: 5, remaining: 5, collectionDate: "2026-08-21", expiryDate: "2026-09-04", status: "Available" },
+    { id: "LOT-H2-O", facilityId: "HOSP-2", facilityName: "Kitwe Teaching Hospital", bloodGroup: "O+", quantity: 7, remaining: 7, collectionDate: "2026-08-19", expiryDate: "2026-09-02", status: "Available" },
+    { id: "LOT-H3-O", facilityId: "HOSP-3", facilityName: "Mufulira District Hospital", bloodGroup: "O+", quantity: 4, remaining: 4, collectionDate: "2026-08-20", expiryDate: "2026-09-03", status: "Available" },
+    { id: "LOT-H4-A", facilityId: "HOSP-4", facilityName: "Chingola District Hospital", bloodGroup: "A-", quantity: 2, remaining: 2, collectionDate: "2026-08-24", expiryDate: "2026-09-01", status: "Available" },
+    { id: "LOT-H5-B", facilityId: "HOSP-5", facilityName: "Luanshya District Hospital", bloodGroup: "B-", quantity: 2, remaining: 2, collectionDate: "2026-08-18", expiryDate: "2026-08-30", status: "Available" },
+    { id: "LOT-H6-O", facilityId: "HOSP-6", facilityName: "Chililabombwe District Hospital", bloodGroup: "O+", quantity: 3, remaining: 3, collectionDate: "2026-08-22", expiryDate: "2026-09-07", status: "Available" },
+    { id: "LOT-H7-A", facilityId: "HOSP-7", facilityName: "Copperbelt Mission Hospital", bloodGroup: "A+", quantity: 3, remaining: 3, collectionDate: "2026-08-20", expiryDate: "2026-09-05", status: "Available" },
+    { id: "LOT-H9-O", facilityId: "HOSP-9", facilityName: "Arthur Davison Children's Hospital", bloodGroup: "O+", quantity: 5, remaining: 5, collectionDate: "2026-08-22", expiryDate: "2026-09-06", status: "Available" },
+    { id: "LOT-H9-A", facilityId: "HOSP-9", facilityName: "Arthur Davison Children's Hospital", bloodGroup: "A+", quantity: 3, remaining: 3, collectionDate: "2026-08-24", expiryDate: "2026-09-08", status: "Available" },
+    { id: "LOT-H9-B", facilityId: "HOSP-9", facilityName: "Arthur Davison Children's Hospital", bloodGroup: "B+", quantity: 2, remaining: 2, collectionDate: "2026-08-23", expiryDate: "2026-09-07", status: "Available" },
   ]);
-  const [hospitals, setHospitals] = useStoredState("hospitals", [
-    { id: 1, name: "Ndola Teaching Hospital", units: 48, status: "Active" },
-    { id: 2, name: "Kabwe General Hospital", units: 31, status: "Active" },
-    { id: 3, name: "Mufulira District Hospital", units: 18, status: "Active" },
+  const [inventoryTransactions, setInventoryTransactions] = useStoredState("inventoryTransactions", [
+    { id: "TX-001", facilityId: "ZNBTS-CB-KITWE-KTH", facilityName: "ZNBTS Kitwe Blood Centre (under Kitwe Teaching Hospital)", bloodGroup: "O-", quantity: 5, transactionType: "TRANSFER_OUT", referenceId: "TRF-001", performedBy: "Mwansa Tembo", timestamp: "2026-08-24T14:10:00Z" },
+    { id: "TX-002", facilityId: "HOSP-1", facilityName: "Ndola Teaching Hospital", bloodGroup: "O-", quantity: 5, transactionType: "TRANSFER_IN", referenceId: "TRF-001", performedBy: "Mwansa Tembo", timestamp: "2026-08-24T14:10:00Z" },
+    { id: "TX-003", facilityId: "HOSP-2", facilityName: "Kitwe Teaching Hospital", bloodGroup: "B+", quantity: 4, transactionType: "TRANSFER_OUT", referenceId: "TRF-002", performedBy: "Brian Zulu", timestamp: "2026-08-22T11:20:00Z" },
+    { id: "TX-004", facilityId: "ZNBTS-CB-KITWE-KTH", facilityName: "ZNBTS Kitwe Blood Centre (under Kitwe Teaching Hospital)", bloodGroup: "B+", quantity: 4, transactionType: "TRANSFER_IN", referenceId: "TRF-002", performedBy: "Mwansa Tembo", timestamp: "2026-08-22T11:20:00Z" },
   ]);
-  const [transfers, setTransfers] = useStoredState("transfers", []);
-  const [appointments, setAppointments] = useStoredState("appointments", []);
-  const [emergencyResponses, setEmergencyResponses] = useStoredState("emergencyResponses", []);
-  const [auditLogs, setAuditLogs] = useStoredState("auditLogs", [
-    { id: 1, event: "System initialised", detail: "UMULOPA application state loaded", time: new Date().toLocaleString() },
-  ]);
-  const [notifications, setNotifications] = useStoredState("notifications", [
-    "Urgent blood request pending for Ndola Teaching Hospital.",
-    "Nightly inventory snapshot is available.",
-  ]);
+  const [auditLogs, setAuditLogs] = useStoredState("auditLogs", demoAuditLogs);
+  const [notifications, setNotifications] = useStoredState("notifications", demoNotifications);
+  const [hospitalAccounts, setHospitalAccounts] = useStoredState("hospitalAccounts", demoHospitalAccounts);
+  const [staffAccounts, setStaffAccounts] = useStoredState("staffAccounts", demoStaffAccounts);
+  const [donorAppointments, setDonorAppointments] = useStoredState("donorAppointments", demoAppointments);
+  const [donorDonations, setDonorDonations] = useStoredState("donorDonations", demoDonations);
+  const [donorEmergencyRequests, setDonorEmergencyRequests] = useStoredState("donorEmergencyRequests", demoDonorEmergencyRequests);
+  const [donorAccounts, setDonorAccounts] = useStoredState("donorAccounts", demoDonorAccounts);
+  const [newsletterSubscribers, setNewsletterSubscribers] = useStoredState("newsletterSubscribers", []);
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const expired = inventoryLots.filter((lot) => lot.status === "Available" && lot.remaining > 0 && lot.expiryDate && lot.expiryDate <= today);
+    if (!expired.length) return;
+    let rows = networkInventory;
+    const tx = [];
+    const nextLots = inventoryLots.map((lot) => {
+      if (!expired.some((x) => x.id === lot.id)) return lot;
+      // Only deduct as much as the network inventory actually has on hand for
+      // this facility/blood-group pair. The hardcoded demo lots and the
+      // network-level seed data are two independent sources of truth and can
+      // disagree (e.g. a lot exists for a group the network seed never
+      // stocked at that facility), so we must never trust `lot.remaining`
+      // blindly here — doing so is what caused "Inventory cannot become
+      // negative" to throw during app startup.
+      const key = `${lot.facilityId}::${lot.bloodGroup}`;
+      const row = rows.find((r) => `${r.facilityId}::${r.bloodGroup}` === key);
+      const currentAvailable = row ? Number(row.available) || 0 : 0;
+      const qty = Math.min(Number(lot.remaining) || 0, currentAvailable);
+
+      if (qty > 0) {
+        const result = applyInventoryChange(rows, { facilityId: lot.facilityId, facilityName: lot.facilityName, facilityType: lot.facilityId === ZNBTS_FACILITY_ID ? "ZNBTS" : "Hospital", province: "Copperbelt", bloodGroup: lot.bloodGroup, quantity: qty, deltaAvailable: -qty, deltaExpired: qty, transactionType: "EXPIRED", referenceId: lot.id, performedBy: "System expiry reconciliation" });
+        rows = result.rows; tx.push(result.transaction);
+      }
+      return { ...lot, remaining: 0, status: "Expired" };
+    });
+    setNetworkInventory(rows);
+    setInventoryLots(nextLots);
+    if (tx.length) setInventoryTransactions((current) => [...tx, ...current]);
+  }, [inventoryLots, networkInventory, setNetworkInventory, setInventoryLots, setInventoryTransactions]);
+
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('umulopa_user');
+      const saved = localStorage.getItem('znbts_user') || localStorage.getItem('umulopa_user');
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -72,14 +155,24 @@ export function AppStateProvider({ children }) {
 
   const login = (userData) => {
     setUser(userData);
-    localStorage.setItem('umulopa_user', JSON.stringify(userData));
+    localStorage.setItem('znbts_user', JSON.stringify(userData));
   };
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('znbts_user');
     localStorage.removeItem('umulopa_user');
     clearAuthentication();
   };
+
+  useEffect(() => {
+    const sync = (event) => {
+      if (event.key === "znbts_networkInventory" && event.newValue) { try { setNetworkInventory(uniqueRecords(JSON.parse(event.newValue))); } catch { /* ignore malformed external state */ } }
+      if (event.key === "znbts_inventoryTransactions" && event.newValue) { try { setInventoryTransactions(uniqueRecords(JSON.parse(event.newValue))); } catch { /* ignore malformed external state */ } }
+    };
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, [setNetworkInventory, setInventoryTransactions]);
 
   const value = useMemo(
     () => ({
@@ -93,14 +186,6 @@ export function AppStateProvider({ children }) {
       setTransfusions,
       donors,
       setDonors,
-      weeklyActivity,
-      setWeeklyActivity,
-      weeklyReportRows,
-      setWeeklyReportRows,
-      usageMetrics,
-      setUsageMetrics,
-      usageRows,
-      setUsageRows,
       stock,
       setStock,
       adminUsers,
@@ -109,14 +194,30 @@ export function AppStateProvider({ children }) {
       setHospitals,
       transfers,
       setTransfers,
-      appointments,
-      setAppointments,
-      emergencyResponses,
-      setEmergencyResponses,
+      networkInventory,
+      setNetworkInventory,
+      inventoryTransactions,
+      setInventoryTransactions,
+      inventoryLots,
+      setInventoryLots,
       auditLogs,
       setAuditLogs,
       notifications,
       setNotifications,
+      hospitalAccounts,
+      setHospitalAccounts,
+      staffAccounts,
+      setStaffAccounts,
+      donorAppointments,
+      setDonorAppointments,
+      donorDonations,
+      setDonorDonations,
+      donorEmergencyRequests,
+      setDonorEmergencyRequests,
+      donorAccounts,
+      setDonorAccounts,
+      newsletterSubscribers,
+      setNewsletterSubscribers,
       user,
       login,
       logout,
@@ -132,14 +233,6 @@ export function AppStateProvider({ children }) {
       setTransfusions,
       donors,
       setDonors,
-      weeklyActivity,
-      setWeeklyActivity,
-      weeklyReportRows,
-      setWeeklyReportRows,
-      usageMetrics,
-      setUsageMetrics,
-      usageRows,
-      setUsageRows,
       stock,
       setStock,
       adminUsers,
@@ -148,14 +241,30 @@ export function AppStateProvider({ children }) {
       setHospitals,
       transfers,
       setTransfers,
-      appointments,
-      setAppointments,
-      emergencyResponses,
-      setEmergencyResponses,
+      networkInventory,
+      setNetworkInventory,
+      inventoryTransactions,
+      setInventoryTransactions,
+      inventoryLots,
+      setInventoryLots,
       auditLogs,
       setAuditLogs,
       notifications,
       setNotifications,
+      hospitalAccounts,
+      setHospitalAccounts,
+      staffAccounts,
+      setStaffAccounts,
+      donorAppointments,
+      setDonorAppointments,
+      donorDonations,
+      setDonorDonations,
+      donorEmergencyRequests,
+      setDonorEmergencyRequests,
+      donorAccounts,
+      setDonorAccounts,
+      newsletterSubscribers,
+      setNewsletterSubscribers,
       user,
     ]
   );

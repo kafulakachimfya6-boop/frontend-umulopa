@@ -1,12 +1,14 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useAppState } from "../../context/useAppState";
+import { scopeToHospital } from "../../utils/hospitalScope";
 
 function TransfusionHistory() {
-  const { transfusions } = useAppState();
+  const { transfusions, user } = useAppState();
+  const hospitalTransfusions = scopeToHospital(transfusions, user);
   const [filter, setFilter] = useState("");
   const filteredTransfusions = useMemo(
-    () => transfusions.filter((item) => item.patient.toLowerCase().includes(filter.toLowerCase())),
-    [transfusions, filter]
+    () => hospitalTransfusions.filter((item) => item.patient.toLowerCase().includes(filter.toLowerCase())),
+    [hospitalTransfusions, filter]
   );
 
   return (

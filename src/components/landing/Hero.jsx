@@ -28,7 +28,7 @@ export default function Hero() {
           </h1>
 
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-[#6B7280]">
-            UMULOPA Safe Transfer helps Ndola hospitals request blood quickly, match it with available donors, and track every transfusion safely from donor registration to delivery.
+            The Zambia National Blood Transfusion Service (ZNBTS) helps Copperbelt hospitals request blood quickly, match it with available donors, and track every transfusion safely from donor registration to delivery.
           </p>
 
           <div className="mt-10 flex flex-wrap gap-4">
@@ -65,7 +65,7 @@ export default function Hero() {
             <div className="relative overflow-hidden rounded-[2rem] border border-[#7A0916]/10 bg-gradient-to-br from-[#7A0916]/5 via-white to-[#E63946]/5 p-6 shadow-2xl shadow-[#7A0916]/10 sm:p-8">
               <img
                 src="images\blood-illustration.jpg"
-                alt="Blood donation illustration for Ndola hospitals"
+                alt="Blood donation illustration for Copperbelt hospitals"
                 className="mx-auto w-full max-w-sm rounded-[1.5rem] border border-white/80 bg-white/70 p-3 shadow-inner"
                 loading="eager"
               />

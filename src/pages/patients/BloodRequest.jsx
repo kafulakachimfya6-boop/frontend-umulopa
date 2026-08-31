@@ -1,8 +1,10 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useAppState } from "../../context/useAppState";
+import { scopeToHospital } from "../../utils/hospitalScope";
 
 function BloodRequest() {
-  const { bloodRequests, setBloodRequests } = useAppState();
+  const { bloodRequests, setBloodRequests, user } = useAppState();
+  const visibleRequests = scopeToHospital(bloodRequests, user);
   const [form, setForm] = useState({ patient: "", bloodType: "", units: "", urgency: "" });
   const [message, setMessage] = useState("");
 
@@ -13,8 +15,10 @@ function BloodRequest() {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    const nextId = bloodRequests.length + 1;
-    setBloodRequests((prev) => [...prev, { id: nextId, ...form, units: Number(form.units), status: "Pending" }]);
+    const nextId = Date.now();
+    const duplicate = bloodRequests.some((r) => (String(r.hospitalId) === String(user?.hospitalId)) && r.patient === form.patient.trim() && r.bloodType === form.bloodType && Number(r.units) === Number(form.units) && r.status === "Pending");
+    if (duplicate) { setMessage("An identical pending blood request already exists for this patient."); return; }
+    setBloodRequests((prev) => [...prev, { id: nextId, ...form, patient: form.patient.trim(), units: Number(form.units), hospitalId: user?.hospitalId || null, hospitalName: user?.hospital || null, status: "Pending", createdAt: new Date().toISOString() }]);
     setMessage("Blood request submitted successfully.");
     setForm({ patient: "", bloodType: "", units: "", urgency: "" });
   };
@@ -105,7 +109,7 @@ function BloodRequest() {
               </tr>
             </thead>
             <tbody>
-              {bloodRequests.map((request) => (
+              {visibleRequests.map((request) => (
                 <tr key={request.id} className="border-t">
                   <td className="px-4 py-3">{request.patient}</td>
                   <td className="px-4 py-3">{request.bloodType}</td>

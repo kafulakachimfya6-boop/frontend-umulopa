@@ -1,12 +1,14 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useAppState } from "../../context/useAppState";
+import { scopeToHospital } from "../../utils/hospitalScope"
 
 function RequestHistory() {
-  const { history } = useAppState();
+  const { history, user } = useAppState();
+  const hospitalHistory = scopeToHospital(history, user);
   const [search, setSearch] = useState("");
   const filteredHistory = useMemo(
-    () => history.filter((item) => item.patient.toLowerCase().includes(search.toLowerCase())),
-    [history, search]
+    () => hospitalHistory.filter((item) => item.patient.toLowerCase().includes(search.toLowerCase())),
+    [hospitalHistory, search]
   );
 
   return (

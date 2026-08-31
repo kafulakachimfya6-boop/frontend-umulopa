@@ -9,7 +9,7 @@ const faqs = [
   },
   {
     question: "How often can I donate?",
-    answer: "Whole blood donations can typically be made every 8–12 weeks. Platelet donations may be more frequent. Your eligibility is tracked automatically in the UMULOPA system.",
+    answer: "Whole blood donations can typically be made every 8–12 weeks. Platelet donations may be more frequent. Your eligibility is tracked automatically in the ZNBTS system.",
   },
   {
     question: "How do hospitals request blood?",
@@ -17,7 +17,7 @@ const faqs = [
   },
   {
     question: "Which hospitals are connected?",
-    answer: "UMULOPA partners with 150+ hospitals and transfusion centers across Zambia, with ongoing expansion to regional facilities.",
+    answer: "ZNBTS partners with 150+ hospitals and transfusion centers across Zambia, with ongoing expansion to regional facilities.",
   },
   {
     question: "What happens in an emergency?",

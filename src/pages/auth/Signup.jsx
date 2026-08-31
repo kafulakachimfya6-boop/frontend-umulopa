@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import AuthLayout from './AuthLayout'
 import './auth.css'
+import { useAppState } from '../../context/useAppState'
+import { hashPassword } from '../../utils/password'
 
 function Signup() {
+  const { donors = [], setDonors, donorAccounts = [], setDonorAccounts, adminUsers = [], setAdminUsers, hospitals = [] } = useAppState()
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [gender, setGender] = useState('')
@@ -22,7 +25,7 @@ function Signup() {
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSuccess('')
@@ -37,13 +40,23 @@ function Signup() {
       return
     }
 
+    const normalizedEmail = email.trim().toLowerCase()
+    if (donorAccounts.some((a) => a.email?.toLowerCase() === normalizedEmail) || adminUsers.some((a) => a.email?.toLowerCase() === normalizedEmail)) {
+      setError('An account with this email already exists.')
+      return
+    }
     setLoading(true)
-
-    setTimeout(() => {
-      setLoading(false)
-      setSuccess('Account created. Please sign in to your donor portal.')
-      navigate('/login/donor', { replace: true })
-    }, 600)
+    const id = `DON-${Date.now()}`
+    const name = `${firstName.trim()} ${lastName.trim()}`.trim()
+    const passwordHash = await hashPassword(password)
+    const donor = { id, name, firstName: firstName.trim(), lastName: lastName.trim(), gender, dateOfBirth, bloodType: bloodGroup, phone, email: normalizedEmail, address, nearestHospitalId: hospitalId, status: 'Active', registeredAt: new Date().toISOString(), verified: false }
+    const account = { id: `DA-${Date.now()}`, donorId: id, name, email: normalizedEmail, role: 'donor', hospital: '—', username: username.trim(), status: 'Active', passwordHash, createdAt: new Date().toISOString() }
+    setDonors((v) => [...v, donor])
+    setDonorAccounts((v) => [...v, account])
+    setAdminUsers((v) => [...v, { ...account }])
+    setLoading(false)
+    setSuccess('ZNBTS donor account created successfully. You can now sign in.')
+    setTimeout(() => navigate('/login/donor', { replace: true }), 500)
   }
 
   return (
@@ -105,9 +118,7 @@ function Signup() {
             <span className="label">Nearest hospital</span>
             <select value={hospitalId} onChange={(e) => setHospitalId(e.target.value)} required>
               <option value="">Select hospital</option>
-              <option value="kitwe">Kitwe Regional Blood Transfusion Center</option>
-              <option value="ndola">Ndola Teaching Hospital</option>
-              <option value="lusaka">Lusaka University Teaching Hospital</option>
+              {hospitals.filter((h) => h.status === "Active" && h.province === "Copperbelt").map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
             </select>
           </label>
         </div>

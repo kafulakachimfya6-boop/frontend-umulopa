@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowUp, BadgeCheck, Droplet, Globe, MessageCircle, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button from "./Button";
+import { useAppState } from "../../context/useAppState";
 
 const quickLinks = [
   { label: "Home", href: "#home" },
@@ -20,6 +21,7 @@ const serviceLinks = [
 export default function Footer() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+  const { newsletterSubscribers = [], setNewsletterSubscribers } = useAppState();
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -28,6 +30,9 @@ export default function Footer() {
   const handleSubscribe = (event) => {
     event.preventDefault();
     if (!email.trim()) return;
+    const normalized = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return;
+    if (!newsletterSubscribers.some((x) => x.email === normalized)) setNewsletterSubscribers((current) => [...current, { id: `NEWS-${Date.now()}`, email: normalized, subscribedAt: new Date().toISOString(), source: "public-footer" }]);
     setSubscribed(true);
     setEmail("");
     setTimeout(() => setSubscribed(false), 4000);
@@ -43,12 +48,12 @@ export default function Footer() {
                 <Droplet className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <p className="text-lg font-bold">UMULOPA</p>
+                <p className="text-lg font-bold">UMULOPA SAFE TRANSFER</p>
                 <p className="text-xs text-white/70">safe transfer</p>
               </div>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-white/70">
-              Secure digital blood management for Ndola hospitals, donors, and patients across the UMULOPA Safe Transfer network.
+              Secure digital blood management for Copperbelt hospitals, donors, and patients across the ZNBTS network.
             </p>
             <div className="mt-6 flex gap-3">
               {[Globe, MessageCircle, Send, BadgeCheck].map((Icon, i) => (
@@ -113,7 +118,7 @@ export default function Footer() {
               </Button>
               {subscribed ? (
                 <p className="text-xs text-green-300" role="status">
-                  Subscribed successfully!
+                  Subscribed successfully. You will receive ZNBTS updates.
                 </p>
               ) : null}
             </form>
@@ -122,7 +127,7 @@ export default function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/15 pt-8 md:flex-row">
           <p className="text-sm text-white/60">
-            &copy; {new Date().getFullYear()} UMULOPA Safe Transfer. All rights reserved.
+            &copy; {new Date().getFullYear()} ZNBTS. All rights reserved.
           </p>
           <button
             type="button"

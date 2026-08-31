@@ -5,7 +5,7 @@ const steps = [
   {
     step: "01",
     title: "Register",
-    description: "Create a donor or staff profile linked to Ndola hospitals and the UMULOPA Safe Transfer system.",
+    description: "Create a donor or staff profile linked to Copperbelt hospitals and the UMULOPA Safe Transfer system.",
     icon: UserPlus,
   },
   {
@@ -29,7 +29,7 @@ export default function HowItWorks() {
         id="how-heading"
         eyebrow="Simple process"
         title="How It Works"
-        subtitle="Three straightforward steps to connect Ndola hospitals with donors and save lives faster."
+        subtitle="Three straightforward steps to connect Copperbelt hospitals with donors and save lives faster."
       />
 
       <div className="relative grid gap-8 md:grid-cols-3">

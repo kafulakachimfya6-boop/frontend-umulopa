@@ -11,7 +11,7 @@ export default function DonorCTA() {
           Become a Hero Today
         </h2>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-white/80">
-          Ndola hospitals depend on reliable donors. Join UMULOPA Safe Transfer and help ensure blood is available when urgent requests come in.
+          Copperbelt hospitals depend on reliable donors. Join UMULOPA Safe Transfer and help ensure blood is available when urgent requests come in.
         </p>
         <div className="mt-10 flex flex-wrap justify-center gap-4">
           <Button to="/signup" variant="light">

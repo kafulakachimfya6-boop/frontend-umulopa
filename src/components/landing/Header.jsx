@@ -34,12 +34,12 @@ export default function Header({ navItems = defaultNavItems }) {
   return (
     <header className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${headerClass}`}>
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 md:px-8 lg:px-16">
-        <a href="#home" className="flex items-center gap-3" aria-label="UMULOPA home">
+        <a href="#home" className="flex items-center gap-3" aria-label="ZNBTS home">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#7A0916] text-white shadow-lg shadow-[#7A0916]/30">
             <Droplet className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
-            <p className={`text-lg font-bold leading-none ${scrolled ? "text-[#111827]" : "text-white"}`}>UMULOPA</p>
+            <p className={`text-lg font-bold leading-none ${scrolled ? "text-[#111827]" : "text-white"}`}>UMULOPA SAFE TRANSFER</p>
             <p className={`text-xs font-medium ${logoSubColor}`}>Safe Transfer</p>
           </div>
         </a>

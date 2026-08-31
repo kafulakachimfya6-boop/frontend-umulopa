@@ -3,14 +3,15 @@ import { Link } from "react-router-dom";
 import { useAppState } from "../../context/useAppState";
 
 function DonorList() {
-  const { donors, setDonors } = useAppState();
+  const { donors, setDonors, user } = useAppState();
+  const visibleDonors = user?.hospitalId ? donors.filter((d) => String(d.nearestHospitalId ?? "") === String(user.hospitalId)) : donors;
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", bloodType: "", phone: "", email: "" });
 
   const filtered = useMemo(
-    () => donors.filter((d) => d.name.toLowerCase().includes(search.toLowerCase())),
-    [donors, search]
+    () => visibleDonors.filter((d) => d.name.toLowerCase().includes(search.toLowerCase())),
+    [visibleDonors, search]
   );
 
   const handleChange = (event) => {
@@ -20,7 +21,7 @@ function DonorList() {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    setDonors((prev) => [...prev, { id: prev.length + 1, ...form }]);
+    setDonors((prev) => [...prev, { id: `DON-${Date.now()}`, ...form, nearestHospitalId: user?.hospitalId || null, status: "Active", verified: false, registeredAt: new Date().toISOString() }]);
     setForm({ name: "", bloodType: "", phone: "", email: "" });
     setShowForm(false);
   };
@@ -30,7 +31,7 @@ function DonorList() {
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Donors</h1>
-          <p className="mt-2 text-gray-600">Manage registered blood donors and their profiles.</p>
+          <p className="mt-2 text-gray-600">Manage registered blood donors and their profiles for {user?.hospital || "your hospital"}.</p>
         </div>
         <button
           type="button"

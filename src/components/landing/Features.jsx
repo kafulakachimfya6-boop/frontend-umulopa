@@ -42,8 +42,8 @@ export default function Features() {
           <SectionHeader
             id="features-heading"
             align="left"
-            eyebrow="Why UMULOPA"
-            title="Why Choose UMULOPA"
+            eyebrow="Why UMULOPA Safe Transfer"
+            title="Why Choose UMULOPA Safe Transfer"
             subtitle="Built for the realities of hospital blood management — secure, fast, and always available when lives are on the line."
           />
 
